@@ -140,20 +140,20 @@ class GhostClient:
         r.raise_for_status()
         return r.json()
 
-    def _post(self, endpoint: str, payload: dict) -> dict:
+    def _post(self, endpoint: str, payload: dict, params: dict = None) -> dict:
         self._check_write()
         r = requests.post(
             f"{self.api_url}/{endpoint.lstrip('/')}",
-            headers=self._headers(), json=payload,
+            headers=self._headers(), json=payload, params=params,
         )
         r.raise_for_status()
         return r.json()
 
-    def _put(self, endpoint: str, payload: dict) -> dict:
+    def _put(self, endpoint: str, payload: dict, params: dict = None) -> dict:
         self._check_write()
         r = requests.put(
             f"{self.api_url}/{endpoint.lstrip('/')}",
-            headers=self._headers(), json=payload,
+            headers=self._headers(), json=payload, params=params,
         )
         r.raise_for_status()
         return r.json()
@@ -277,13 +277,15 @@ class GhostClient:
         if twitter_description is not None: post["twitter_description"] = twitter_description
         if feature_image   is not None: post["feature_image"]    = feature_image
         post.update(extra)
-        result = self._post("posts", {"posts": [post]})
+        params = {"source": "html"} if html is not None else None
+        result = self._post("posts", {"posts": [post]}, params=params)
         return result.get("posts", [{}])[0]
 
     def update_post(self, post_id: str, updated_at: str = None, **fields) -> dict:
         """
         Update a post. updated_at is required by Ghost to prevent conflicts.
         If not provided, it's fetched automatically.
+        Pass ?source=html automatically when an html field is included.
         """
         if updated_at is None:
             existing = self.get_post(post_id)
@@ -291,7 +293,8 @@ class GhostClient:
         if "status" in fields:
             fields["status"] = self._resolve_status(fields["status"])
         payload = {"updated_at": updated_at, **fields}
-        result  = self._put(f"posts/{post_id}", {"posts": [payload]})
+        params = {"source": "html"} if "html" in fields else None
+        result  = self._put(f"posts/{post_id}", {"posts": [payload]}, params=params)
         return result.get("posts", [{}])[0]
 
     def delete_post(self, post_id: str) -> bool:
@@ -328,14 +331,16 @@ class GhostClient:
         }
         if html is not None: page["html"] = html
         page.update(fields)
-        return self._post("pages", {"pages": [page]}).get("pages", [{}])[0]
+        params = {"source": "html"} if html is not None else None
+        return self._post("pages", {"pages": [page]}, params=params).get("pages", [{}])[0]
 
     def update_page(self, page_id: str, updated_at: str = None, **fields) -> dict:
         if updated_at is None:
             updated_at = self.get_page(page_id).get("updated_at")
         if "status" in fields:
             fields["status"] = self._resolve_status(fields["status"])
-        return self._put(f"pages/{page_id}", {"pages": [{"updated_at": updated_at, **fields}]}).get("pages", [{}])[0]
+        params = {"source": "html"} if "html" in fields else None
+        return self._put(f"pages/{page_id}", {"pages": [{"updated_at": updated_at, **fields}]}, params=params).get("pages", [{}])[0]
 
     def delete_page(self, page_id: str) -> bool:
         return self._delete(f"pages/{page_id}")

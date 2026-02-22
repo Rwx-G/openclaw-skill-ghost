@@ -6,7 +6,9 @@ compatibility: Python 3.9+ · requests · network access to Ghost instance · Ad
 metadata:
   {
     "openclaw": {
-      "emoji": "👻"
+      "emoji": "👻",
+      "requires": { "env": ["GHOST_URL", "GHOST_ADMIN_KEY"] },
+      "primaryEnv": "GHOST_ADMIN_KEY"
     }
   }
 ontology:

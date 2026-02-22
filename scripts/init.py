@@ -7,10 +7,10 @@ All test artifacts are cleaned up automatically.
 Usage: python3 scripts/init.py
 """
 
-import datetime
-import json
 import sys
 from pathlib import Path
+
+import requests as _requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from ghost import GhostClient, GhostError, PermissionDeniedError, _make_jwt
@@ -18,7 +18,32 @@ from ghost import GhostClient, GhostError, PermissionDeniedError, _make_jwt
 SKILL_DIR   = Path(__file__).resolve().parent.parent
 CONFIG_FILE = SKILL_DIR / "config.json"
 CREDS_FILE  = Path.home() / ".openclaw" / "secrets" / "ghost_creds"
-LOG_DIR     = SKILL_DIR / ".skill-logs"
+
+
+def _init_force_delete_post(gc: GhostClient, post_id: str) -> bool:
+    """Delete a post bypassing config restrictions.
+    Init-only cleanup helper — not part of the GhostClient public API.
+    Used exclusively to remove test artifacts created during this init run.
+    """
+    token = _make_jwt(gc._key_id, gc._secret_hex)
+    r = _requests.delete(
+        f"{gc.api_url}/posts/{post_id}",
+        headers={"Authorization": f"Ghost {token}", "Accept-Version": "v5.0"},
+    )
+    return r.status_code in (204, 200, 404)
+
+
+def _init_force_delete_tag(gc: GhostClient, tag_id: str) -> bool:
+    """Delete a tag bypassing config restrictions.
+    Init-only cleanup helper — not part of the GhostClient public API.
+    Used exclusively to remove test artifacts created during this init run.
+    """
+    token = _make_jwt(gc._key_id, gc._secret_hex)
+    r = _requests.delete(
+        f"{gc.api_url}/tags/{tag_id}",
+        headers={"Authorization": f"Ghost {token}", "Accept-Version": "v5.0"},
+    )
+    return r.status_code in (204, 200, 404)
 
 TEST_TITLE = "[skill-init-test] DELETE ME"
 TEST_TAG   = "__skill-init-test__"
@@ -29,31 +54,19 @@ class Results:
         self.passed  = []
         self.failed  = []
         self.skipped = []
-        self._entries = []
-
-    def _record(self, status: str, label: str, detail: str = ""):
-        self._entries.append({
-            "ts":     datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            "status": status,
-            "check":  label,
-            "detail": detail,
-        })
 
     def ok(self, label: str, detail: str = ""):
         self.passed.append(label)
-        self._record("pass", label, detail)
         suffix = f"  {detail}" if detail else ""
         print(f"  ✓  {label}{suffix}")
 
     def fail(self, label: str, reason: str = ""):
         self.failed.append(label)
-        self._record("fail", label, reason)
         suffix = f"  → {reason}" if reason else ""
         print(f"  ✗  {label}{suffix}")
 
     def skip(self, label: str, reason: str = ""):
         self.skipped.append(label)
-        self._record("skip", label, reason)
         print(f"  ~  {label}  (skipped: {reason})")
 
     def summary(self):
@@ -67,25 +80,6 @@ class Results:
             print("\n  Failed checks:")
             for f in self.failed:
                 print(f"    ✗  {f}")
-
-    def write_log(self):
-        """Append structured results to .skill-logs/init.jsonl"""
-        try:
-            LOG_DIR.mkdir(parents=True, exist_ok=True)
-            log_file = LOG_DIR / "init.jsonl"
-            run_entry = {
-                "ts":      datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                "skill":   "ghost",
-                "passed":  len(self.passed),
-                "failed":  len(self.failed),
-                "skipped": len(self.skipped),
-                "checks":  self._entries,
-            }
-            with log_file.open("a") as f:
-                f.write(json.dumps(run_entry) + "\n")
-            print(f"\n  Log written → {log_file}")
-        except Exception as e:
-            print(f"\n  (Log write failed: {e})")
 
 
 def main():
@@ -202,28 +196,21 @@ def main():
     if not cfg.get("allow_delete", False):
         r.skip("Delete (post)", "allow_delete=false")
         r.skip("Delete (tag)",  "allow_delete=false")
-        # Clean up via direct API call (bypassing config check) since this is
-        # an init script, not normal agent usage
+        # Clean up init-only test artifacts via local helpers (not part of GhostClient).
         if test_post_id:
             try:
-                import requests
-                token = _make_jwt(gc._key_id, gc._secret_hex)
-                requests.delete(
-                    f"{gc.api_url}/posts/{test_post_id}",
-                    headers={"Authorization": f"Ghost {token}", "Accept-Version": "v5.0"},
-                )
-            except Exception:
-                print(f"  ⚠  Test post {test_post_id} could not be cleaned up. Delete manually.")
+                if not _init_force_delete_post(gc, test_post_id):
+                    print(f"  ⚠  Test post {test_post_id} could not be cleaned up. Delete manually.")
+                test_post_id = None
+            except Exception as e:
+                print(f"  ⚠  Test post {test_post_id} could not be cleaned up: {e}")
         if test_tag_id:
             try:
-                import requests
-                token = _make_jwt(gc._key_id, gc._secret_hex)
-                requests.delete(
-                    f"{gc.api_url}/tags/{test_tag_id}",
-                    headers={"Authorization": f"Ghost {token}", "Accept-Version": "v5.0"},
-                )
-            except Exception:
-                print(f"  ⚠  Test tag {test_tag_id} could not be cleaned up. Delete manually.")
+                if not _init_force_delete_tag(gc, test_tag_id):
+                    print(f"  ⚠  Test tag {test_tag_id} could not be cleaned up. Delete manually.")
+                test_tag_id = None
+            except Exception as e:
+                print(f"  ⚠  Test tag {test_tag_id} could not be cleaned up: {e}")
     elif ro:
         r.skip("Delete (post)", "readonly_mode=true")
         r.skip("Delete (tag)",  "readonly_mode=true")
@@ -266,8 +253,6 @@ def main():
     print("│   Init check complete                   │")
     print("└─────────────────────────────────────────┘")
     r.summary()
-
-    r.write_log()
 
     if r.failed:
         print("\n  Review config.json and ghost_creds, then re-run setup.py.\n")

@@ -4,14 +4,14 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![OpenClaw](https://img.shields.io/badge/OpenClaw-skill-blue)](https://openclaw.ai)
-[![ClawHub](https://img.shields.io/badge/ClawHub-ghost-green)](https://clawhub.ai/rwx-g/ghost)
+[![ClawHub](https://img.shields.io/badge/ClawHub-ghost--admin-green)](https://clawhub.ai/Romain-Grosos/ghost-admin)
 
 Full Ghost Admin API v5 client for OpenClaw agents. Covers posts, pages, tags, images, members, and newsletters. JWT auth generated from stdlib — no external dependencies beyond `requests`. Includes interactive setup wizard, connection + permission validation, and a behavior restriction system via `config.json`.
 
 ## Install
 
 ```bash
-clawhub install ghost
+clawhub install ghost-admin
 ```
 
 Or manually:
@@ -46,6 +46,13 @@ You'll need a Ghost **Admin API Key**: Ghost Admin → Settings → Integrations
 ## Configuration
 
 Credentials → `~/.openclaw/secrets/ghost_creds` (chmod 600, never committed)
+
+Required variables (set by `setup.py` or manually):
+
+```
+GHOST_URL=https://your-site.com
+GHOST_ADMIN_KEY=key_id:secret_hex
+```
 
 Behavior → `config.json` in skill directory:
 

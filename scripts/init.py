@@ -10,40 +10,13 @@ Usage: python3 scripts/init.py
 import sys
 from pathlib import Path
 
-import requests as _requests
-
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from ghost import GhostClient, GhostError, PermissionDeniedError, _make_jwt
+from ghost import GhostClient, GhostError, PermissionDeniedError
 
 SKILL_DIR   = Path(__file__).resolve().parent.parent
 CONFIG_FILE = SKILL_DIR / "config.json"
 CREDS_FILE  = Path.home() / ".openclaw" / "secrets" / "ghost_creds"
 
-
-def _init_force_delete_post(gc: GhostClient, post_id: str) -> bool:
-    """Delete a post bypassing config restrictions.
-    Init-only cleanup helper — not part of the GhostClient public API.
-    Used exclusively to remove test artifacts created during this init run.
-    """
-    token = _make_jwt(gc._key_id, gc._secret_hex)
-    r = _requests.delete(
-        f"{gc.api_url}/posts/{post_id}",
-        headers={"Authorization": f"Ghost {token}", "Accept-Version": "v5.0"},
-    )
-    return r.status_code in (204, 200, 404)
-
-
-def _init_force_delete_tag(gc: GhostClient, tag_id: str) -> bool:
-    """Delete a tag bypassing config restrictions.
-    Init-only cleanup helper — not part of the GhostClient public API.
-    Used exclusively to remove test artifacts created during this init run.
-    """
-    token = _make_jwt(gc._key_id, gc._secret_hex)
-    r = _requests.delete(
-        f"{gc.api_url}/tags/{tag_id}",
-        headers={"Authorization": f"Ghost {token}", "Accept-Version": "v5.0"},
-    )
-    return r.status_code in (204, 200, 404)
 
 TEST_TITLE = "[skill-init-test] DELETE ME"
 TEST_TAG   = "__skill-init-test__"
@@ -196,21 +169,13 @@ def main():
     if not cfg.get("allow_delete", False):
         r.skip("Delete (post)", "allow_delete=false")
         r.skip("Delete (tag)",  "allow_delete=false")
-        # Clean up init-only test artifacts via local helpers (not part of GhostClient).
-        if test_post_id:
-            try:
-                if not _init_force_delete_post(gc, test_post_id):
-                    print(f"  ⚠  Test post {test_post_id} could not be cleaned up. Delete manually.")
-                test_post_id = None
-            except Exception as e:
-                print(f"  ⚠  Test post {test_post_id} could not be cleaned up: {e}")
-        if test_tag_id:
-            try:
-                if not _init_force_delete_tag(gc, test_tag_id):
-                    print(f"  ⚠  Test tag {test_tag_id} could not be cleaned up. Delete manually.")
-                test_tag_id = None
-            except Exception as e:
-                print(f"  ⚠  Test tag {test_tag_id} could not be cleaned up: {e}")
+        if test_post_id or test_tag_id:
+            print(f"\n  ℹ  Test artifacts left in Ghost (delete disabled in config):")
+            if test_post_id:
+                print(f"     Post id={test_post_id}  title=\"{TEST_TITLE}\"")
+            if test_tag_id:
+                print(f"     Tag  id={test_tag_id}   slug=\"{TEST_TAG}\"")
+            print(f"     → Delete manually via Ghost Admin > Posts / Tags")
     elif ro:
         r.skip("Delete (post)", "readonly_mode=true")
         r.skip("Delete (tag)",  "readonly_mode=true")

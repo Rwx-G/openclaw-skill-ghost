@@ -163,42 +163,46 @@ def main():
         except Exception as e:
             r.fail("Write (create tag)", str(e))
 
-    # ── 7. Delete ──────────────────────────────────────────────────────────────
+    # ── 7. Delete permissions (user content) ──────────────────────────────────
     print("\n● Delete permissions\n")
 
     if not cfg.get("allow_delete", False):
         r.skip("Delete (post)", "allow_delete=false")
         r.skip("Delete (tag)",  "allow_delete=false")
-        if test_post_id or test_tag_id:
-            print(f"\n  ℹ  Test artifacts left in Ghost (delete disabled in config):")
-            if test_post_id:
-                print(f"     Post id={test_post_id}  title=\"{TEST_TITLE}\"")
-            if test_tag_id:
-                print(f"     Tag  id={test_tag_id}   slug=\"{TEST_TAG}\"")
-            print(f"     → Delete manually via Ghost Admin > Posts / Tags")
     elif ro:
         r.skip("Delete (post)", "readonly_mode=true")
         r.skip("Delete (tag)",  "readonly_mode=true")
     else:
+        r.ok("Delete enabled", "allow_delete=true")
+
+    # ── 7b. Cleanup — always remove test artifacts ─────────────────────────────
+    print("\n● Cleanup (test artifacts)\n")
+
+    if ro:
+        if test_post_id or test_tag_id:
+            print(f"  ℹ  readonly_mode=true — test artifacts not created, no cleanup needed.")
+    else:
         if test_post_id:
             try:
-                gc.delete_post(test_post_id)
+                gc._force_delete(f"posts/{test_post_id}")
                 test_post_id = None
-                r.ok("Delete (post)")
+                r.ok("Cleanup (delete test post)")
             except Exception as e:
-                r.fail("Delete (post)", str(e))
+                r.fail("Cleanup (delete test post)", str(e))
+                print(f"     ⚠  Manual cleanup needed: Ghost Admin > Posts > delete \"{TEST_TITLE}\"")
         else:
-            r.skip("Delete (post)", "no test post to delete")
+            r.skip("Cleanup (delete test post)", "no test post created")
 
         if test_tag_id:
             try:
-                gc.delete_tag(test_tag_id)
+                gc._force_delete(f"tags/{test_tag_id}")
                 test_tag_id = None
-                r.ok("Delete (tag)")
+                r.ok("Cleanup (delete test tag)")
             except Exception as e:
-                r.fail("Delete (tag)", str(e))
+                r.fail("Cleanup (delete test tag)", str(e))
+                print(f"     ⚠  Manual cleanup needed: Ghost Admin > Tags > delete \"{TEST_TAG}\"")
         else:
-            r.skip("Delete (tag)", "no test tag to delete")
+            r.skip("Cleanup (delete test tag)", "no test tag created")
 
     # ── 8. Members ─────────────────────────────────────────────────────────────
     print("\n● Optional permissions\n")

@@ -47,9 +47,12 @@ python3 scripts/ghost.py posts --limit 3 --fields "id,title,status"
 ## Setup
 
 ```bash
-python3 scripts/setup.py   # interactive: credentials + permissions + connection test
-python3 scripts/init.py    # validate all configured permissions against live instance
+pip install requests           # install dependency first (setup.py does not run pip)
+python3 scripts/setup.py       # interactive: credentials + permissions + connection test
+python3 scripts/init.py        # validate all configured permissions against live instance
 ```
+
+> init.py creates temporary test posts/tags and **always deletes them** on exit, regardless of `allow_delete` config.
 
 **Manual** — `~/.openclaw/secrets/ghost_creds` (chmod 600):
 ```
@@ -87,6 +90,7 @@ python3 scripts/ghost.py posts --tag devops --fields "id,title,published_at"
 python3 scripts/ghost.py post <id_or_slug>
 python3 scripts/ghost.py post-create "Title" --html "<p>...</p>" --status draft
 python3 scripts/ghost.py post-create "Title" --html-file body.html --tags "DevOps,Linux"
+python3 scripts/ghost.py post-create "Title" --html-file body.html --feature-image "https://..."
 python3 scripts/ghost.py post-update <id> --fields-json '{"title":"New","custom_excerpt":"..."}'
 python3 scripts/ghost.py post-publish <id>
 python3 scripts/ghost.py post-unpublish <id>

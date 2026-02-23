@@ -14,6 +14,8 @@ import sys
 import time
 from pathlib import Path
 
+# No subprocess usage in this file — pip installs must be done manually.
+
 SKILL_DIR   = Path(__file__).resolve().parent.parent
 CONFIG_FILE = SKILL_DIR / "config.json"
 CREDS_FILE  = Path.home() / ".openclaw" / "secrets" / "ghost_creds"
@@ -26,14 +28,8 @@ def _ensure_requests():
     except ImportError:
         print("✗ Missing dependency: 'requests' is not installed.")
         print("  Install it with:  pip install requests")
-        ans = input("  Install now? [Y/n] ").strip().lower()
-        if ans in ("", "y", "yes"):
-            import subprocess
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
-            print("  ✓ requests installed.\n")
-        else:
-            print("  Aborted. Install requests and re-run setup.py.")
-            sys.exit(1)
+        print("  Then re-run:      python3 scripts/setup.py")
+        sys.exit(1)
 
 _ensure_requests()
 

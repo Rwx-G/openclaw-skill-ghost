@@ -24,11 +24,14 @@ git clone https://github.com/rwx-g/openclaw-skill-ghost \
 ## Setup
 
 ```bash
-python3 scripts/setup.py   # credentials + permissions + connection test
-python3 scripts/init.py    # validate all configured permissions
+pip install requests           # install dependency first
+python3 scripts/setup.py       # credentials + permissions + connection test
+python3 scripts/init.py        # validate all configured permissions
 ```
 
 You'll need a Ghost **Admin API Key**: Ghost Admin → Settings → Integrations → Add custom integration.
+
+> init.py creates temporary test artifacts (post + tag) and always removes them on exit — regardless of `allow_delete` config.
 
 ## What it can do
 
@@ -70,8 +73,10 @@ Behavior → `config.json` in skill directory:
 ## Requirements
 
 - Python 3.9+
-- `requests` (`pip install requests`)
+- `requests` — install with `pip install requests` before running setup.py
 - Network access to Ghost instance (self-hosted or Ghost Pro)
+
+> **Note:** setup.py does not run `pip` automatically. Install dependencies manually before setup.
 
 ## Documentation
 

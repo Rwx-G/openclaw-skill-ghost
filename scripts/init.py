@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """
 init.py — Validate the Ghost skill configuration.
-Tests the connection and each configured permission against the real instance.
-All test artifacts are cleaned up automatically.
+Tests connection and permissions against the live instance.
+
+Write tests (create/update/delete) are only run when allow_delete=true.
+This guarantees no test artifacts are ever left on the Ghost instance.
 
 Usage: python3 scripts/init.py
 """
@@ -73,9 +75,12 @@ def main():
         sys.exit(1)
 
     cfg = gc.cfg
-    ro  = cfg.get("readonly_mode", False)
-    r   = Results()
+    ro           = cfg.get("readonly_mode", False)
+    allow_delete = cfg.get("allow_delete", False)
+    # Write tests require allow_delete=true to guarantee cleanup — no orphan artifacts.
+    can_write_test = allow_delete and not ro
 
+    r = Results()
     test_post_id = None
     test_tag_id  = None
 
@@ -94,7 +99,6 @@ def main():
     print("\n● Read permissions\n")
     try:
         result = gc.list_posts(limit=1, status="all", fields="id,title,status")
-        posts  = result.get("posts", [])
         total  = result.get("meta", {}).get("pagination", {}).get("total", "?")
         r.ok("Read posts", f"{total} post(s) on this instance")
     except Exception as e:
@@ -107,12 +111,30 @@ def main():
     except Exception as e:
         r.fail("Read tags", str(e))
 
-    # ── 3. Write: create draft post ────────────────────────────────────────────
-    print("\n● Write permissions\n")
+    # ── 3–6. Write + Delete (only when allow_delete=true) ─────────────────────
+    print("\n● Write / Delete permissions\n")
 
     if ro:
-        r.skip("Write (create draft)", "readonly_mode=true")
+        r.skip("Write (create draft)",   "readonly_mode=true")
+        r.skip("Write (update post)",    "readonly_mode=true")
+        r.skip("Publish / Unpublish",    "readonly_mode=true")
+        r.skip("Write (create tag)",     "readonly_mode=true")
+        r.skip("Delete (post + tag)",    "readonly_mode=true")
+
+    elif not allow_delete:
+        # Cannot guarantee cleanup → skip all write tests to avoid orphan artifacts.
+        r.skip("Write (create draft)",   "allow_delete=false (write test skipped — no cleanup possible)")
+        r.skip("Write (update post)",    "allow_delete=false")
+        r.skip("Publish / Unpublish",    "allow_publish=true" if cfg.get("allow_publish", True) else "allow_publish=false")
+        r.skip("Write (create tag)",     "allow_delete=false (write test skipped — no cleanup possible)")
+        r.skip("Delete (post + tag)",    "allow_delete=false")
+        print(f"\n  ℹ  Write tests skipped: allow_delete=false ensures no test artifacts")
+        print(f"     are left on the instance. Write access will be confirmed on first use.")
+
     else:
+        # allow_delete=true — safe to create and clean up test artifacts.
+
+        # 3. Create draft post
         try:
             post = gc.create_post(
                 title=TEST_TITLE,
@@ -124,38 +146,32 @@ def main():
         except Exception as e:
             r.fail("Write (create draft)", str(e))
 
-    # ── 4. Update ──────────────────────────────────────────────────────────────
-    if test_post_id and not ro:
-        try:
-            gc.update_post(test_post_id, custom_excerpt="init check excerpt")
-            r.ok("Write (update post)")
-        except Exception as e:
-            r.fail("Write (update post)", str(e))
+        # 4. Update
+        if test_post_id:
+            try:
+                gc.update_post(test_post_id, custom_excerpt="init check excerpt")
+                r.ok("Write (update post)")
+            except Exception as e:
+                r.fail("Write (update post)", str(e))
 
-    # ── 5. Publish ─────────────────────────────────────────────────────────────
-    if not cfg.get("allow_publish", True):
-        r.skip("Publish / Unpublish", "allow_publish=false")
-    elif ro:
-        r.skip("Publish / Unpublish", "readonly_mode=true")
-    elif test_post_id:
-        try:
-            gc.publish_post(test_post_id)
-            r.ok("Publish post")
-        except Exception as e:
-            r.fail("Publish post", str(e))
+        # 5. Publish / Unpublish
+        if not cfg.get("allow_publish", True):
+            r.skip("Publish / Unpublish", "allow_publish=false")
+        elif test_post_id:
+            try:
+                gc.publish_post(test_post_id)
+                r.ok("Publish post")
+            except Exception as e:
+                r.fail("Publish post", str(e))
+            try:
+                gc.unpublish_post(test_post_id)
+                r.ok("Unpublish post (→ draft)")
+            except Exception as e:
+                r.fail("Unpublish post", str(e))
+        else:
+            r.skip("Publish / Unpublish", "no test post created (write check failed)")
 
-        try:
-            gc.unpublish_post(test_post_id)
-            r.ok("Unpublish post (→ draft)")
-        except Exception as e:
-            r.fail("Unpublish post", str(e))
-    else:
-        r.skip("Publish / Unpublish", "no test post created (write check failed)")
-
-    # ── 6. Tags ────────────────────────────────────────────────────────────────
-    if ro:
-        r.skip("Write (create tag)", "readonly_mode=true")
-    else:
+        # 6. Create tag
         try:
             tag = gc.create_tag(TEST_TAG, description="skill init test — safe to delete")
             test_tag_id = tag.get("id")
@@ -163,48 +179,26 @@ def main():
         except Exception as e:
             r.fail("Write (create tag)", str(e))
 
-    # ── 7. Delete permissions (user content) ──────────────────────────────────
-    print("\n● Delete permissions\n")
-
-    if not cfg.get("allow_delete", False):
-        r.skip("Delete (post)", "allow_delete=false")
-        r.skip("Delete (tag)",  "allow_delete=false")
-    elif ro:
-        r.skip("Delete (post)", "readonly_mode=true")
-        r.skip("Delete (tag)",  "readonly_mode=true")
-    else:
-        r.ok("Delete enabled", "allow_delete=true")
-
-    # ── 7b. Cleanup — always remove test artifacts ─────────────────────────────
-    print("\n● Cleanup (test artifacts)\n")
-
-    if ro:
-        if test_post_id or test_tag_id:
-            print(f"  ℹ  readonly_mode=true — test artifacts not created, no cleanup needed.")
-    else:
+        # Cleanup — delete test artifacts (guaranteed since allow_delete=true)
         if test_post_id:
             try:
-                gc._force_delete(f"posts/{test_post_id}")
+                gc.delete_post(test_post_id)
                 test_post_id = None
-                r.ok("Cleanup (delete test post)")
+                r.ok("Delete (test post)")
             except Exception as e:
-                r.fail("Cleanup (delete test post)", str(e))
+                r.fail("Delete (test post)", str(e))
                 print(f"     ⚠  Manual cleanup needed: Ghost Admin > Posts > delete \"{TEST_TITLE}\"")
-        else:
-            r.skip("Cleanup (delete test post)", "no test post created")
 
         if test_tag_id:
             try:
-                gc._force_delete(f"tags/{test_tag_id}")
+                gc.delete_tag(test_tag_id)
                 test_tag_id = None
-                r.ok("Cleanup (delete test tag)")
+                r.ok("Delete (test tag)")
             except Exception as e:
-                r.fail("Cleanup (delete test tag)", str(e))
+                r.fail("Delete (test tag)", str(e))
                 print(f"     ⚠  Manual cleanup needed: Ghost Admin > Tags > delete \"{TEST_TAG}\"")
-        else:
-            r.skip("Cleanup (delete test tag)", "no test tag created")
 
-    # ── 8. Members ─────────────────────────────────────────────────────────────
+    # ── 7. Members ─────────────────────────────────────────────────────────────
     print("\n● Optional permissions\n")
 
     if not cfg.get("allow_member_access", False):

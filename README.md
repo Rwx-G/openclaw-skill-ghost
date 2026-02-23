@@ -31,7 +31,7 @@ python3 scripts/init.py        # validate all configured permissions
 
 You'll need a Ghost **Admin API Key**: Ghost Admin → Settings → Integrations → Add custom integration.
 
-> init.py creates temporary test artifacts (post + tag) and always removes them on exit — regardless of `allow_delete` config.
+> init.py only runs write/delete tests when `allow_delete=true`. When `allow_delete=false`, write tests are skipped — no artifacts are created and none can be left on your instance.
 
 ## What it can do
 

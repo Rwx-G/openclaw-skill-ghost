@@ -167,18 +167,6 @@ class GhostClient:
         r.raise_for_status()
         return True
 
-    def _force_delete(self, endpoint: str) -> bool:
-        """Bypass allow_delete — internal use only (init.py cleanup of test artifacts).
-        Still respects readonly_mode."""
-        if self.cfg.get("readonly_mode"):
-            raise PermissionDeniedError("readonly_mode is enabled in config.json")
-        r = requests.delete(
-            f"{self.api_url}/{endpoint.lstrip('/')}",
-            headers=self._headers(),
-        )
-        r.raise_for_status()
-        return True
-
     # ── Config enforcement ─────────────────────────────────────────────────────
 
     def _check_write(self):

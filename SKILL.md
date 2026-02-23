@@ -52,7 +52,7 @@ python3 scripts/setup.py       # interactive: credentials + permissions + connec
 python3 scripts/init.py        # validate all configured permissions against live instance
 ```
 
-> init.py creates temporary test posts/tags and **always deletes them** on exit, regardless of `allow_delete` config.
+> init.py only runs write/delete tests when `allow_delete=true`. When `allow_delete=false`, write tests are skipped — no test artifacts are created, so none can be left behind.
 
 **Manual** — `~/.openclaw/secrets/ghost_creds` (chmod 600):
 ```

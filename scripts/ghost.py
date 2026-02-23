@@ -511,15 +511,16 @@ def _cli():
 
     sp = _add("post-create",   "Create a post")
     sp.add_argument("title")
-    sp.add_argument("--html",        default=None)
-    sp.add_argument("--html-file",   default=None, help="Read HTML from file")
-    sp.add_argument("--status",      default=None, help="draft|published|scheduled")
-    sp.add_argument("--tags",        default=None, help="Comma-separated tag names")
-    sp.add_argument("--featured",    action="store_true")
-    sp.add_argument("--excerpt",     default=None)
-    sp.add_argument("--meta-title",  default=None)
-    sp.add_argument("--meta-desc",   default=None)
-    sp.add_argument("--slug",        default=None)
+    sp.add_argument("--html",           default=None)
+    sp.add_argument("--html-file",      default=None, help="Read HTML from file")
+    sp.add_argument("--status",         default=None, help="draft|published|scheduled")
+    sp.add_argument("--tags",           default=None, help="Comma-separated tag names")
+    sp.add_argument("--featured",       action="store_true")
+    sp.add_argument("--excerpt",        default=None)
+    sp.add_argument("--meta-title",     default=None)
+    sp.add_argument("--meta-desc",      default=None)
+    sp.add_argument("--slug",           default=None)
+    sp.add_argument("--feature-image",  default=None, help="URL of the feature/hero image")
 
     sp = _add("post-update",   "Update a post"); sp.add_argument("post_id"); sp.add_argument("--fields-json", required=True)
     sp = _add("post-delete",   "Delete a post"); sp.add_argument("post_id")
@@ -587,6 +588,7 @@ def _cli():
             featured=args.featured, custom_excerpt=args.excerpt,
             meta_title=args.meta_title, meta_description=args.meta_desc,
             slug=args.slug,
+            feature_image=args.feature_image,
         ))
 
     elif args.cmd == "post-update":

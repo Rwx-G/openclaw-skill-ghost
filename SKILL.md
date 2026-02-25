@@ -13,7 +13,7 @@ metadata:
   }
 ontology:
   reads: []
-  writes: [posts, pages, tags, images, members]
+  writes: [posts, pages, tags, images]
 ---
 
 # Ghost Skill
@@ -82,10 +82,9 @@ The skill reads and writes the following paths. All usage is intentional and doc
 
 Credentials can also be provided via environment variables (`GHOST_URL`, `GHOST_ADMIN_KEY`). The skill checks env vars first.
 
-**Cleanup on uninstall:** `clawhub uninstall ghost-admin` removes the skill directory but leaves config and credentials in place. Clean manually if needed:
+**Cleanup on uninstall:** `clawhub uninstall ghost-admin` removes the skill directory. To also remove credentials and config:
 ```bash
-rm -rf ~/.openclaw/config/ghost
-rm ~/.openclaw/secrets/ghost_creds
+python3 scripts/setup.py --cleanup
 ```
 On reinstall, any existing config at `~/.openclaw/config/ghost/config.json` is picked up automatically.
 

@@ -128,6 +128,26 @@ def _test_connection(ghost_url: str, admin_key: str) -> tuple:
         return False, str(e)
 
 
+def cleanup():
+    """Remove all persistent files written by this skill (credentials + config)."""
+    print("Removing Ghost skill persistent files...")
+    removed = []
+    for path in [CREDS_FILE, CONFIG_FILE]:
+        if path.exists():
+            path.unlink()
+            removed.append(str(path))
+    try:
+        _CONFIG_DIR.rmdir()  # removes dir only if empty
+    except OSError:
+        pass
+    if removed:
+        for p in removed:
+            print(f"  Removed: {p}")
+        print("Done. Re-run setup.py to reconfigure.")
+    else:
+        print("  Nothing to remove.")
+
+
 def main():
     print("┌─────────────────────────────────────────┐")
     print("│   Ghost Skill - Setup                   │")
@@ -243,4 +263,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if "--cleanup" in sys.argv:
+        cleanup()
+    else:
+        main()

@@ -6,7 +6,7 @@ Skill: ghost | https://clawhub.ai
 Supports Ghost Admin API v5.x (self-hosted and Ghost Pro).
 Auth: JWT generated from Admin API Key (no external dependencies).
 
-Config  : <skill_dir>/config.json
+Config  : ~/.openclaw/config/ghost/config.json
 Secrets : ~/.openclaw/secrets/ghost_creds  (GHOST_URL, GHOST_ADMIN_KEY)
 
 GHOST_ADMIN_KEY format: <id>:<secret_hex>
@@ -27,9 +27,10 @@ import requests
 
 # ─── Paths ─────────────────────────────────────────────────────────────────────
 
-SKILL_DIR   = Path(__file__).resolve().parent.parent
-CONFIG_FILE = SKILL_DIR / "config.json"
-CREDS_FILE  = Path.home() / ".openclaw" / "secrets" / "ghost_creds"
+SKILL_DIR    = Path(__file__).resolve().parent.parent
+_CONFIG_DIR  = Path.home() / ".openclaw" / "config" / "ghost"
+CONFIG_FILE  = _CONFIG_DIR / "config.json"
+CREDS_FILE   = Path.home() / ".openclaw" / "secrets" / "ghost_creds"
 
 _DEFAULT_CONFIG = {
     "allow_publish":       False,

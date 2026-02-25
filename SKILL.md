@@ -19,7 +19,7 @@ ontology:
 # Ghost Skill
 
 Full Ghost Admin API v5 client. HS256 JWT auth via stdlib - no external dependencies beyond `requests`.
-Credentials: `~/.openclaw/secrets/ghost_creds` · Config: `config.json` in skill dir.
+Credentials: `~/.openclaw/secrets/ghost_creds` · Config: `~/.openclaw/config/ghost/config.json`
 
 ## Trigger phrases
 
@@ -79,7 +79,7 @@ The skill reads and writes the following paths. All usage is intentional and doc
 | Path | Written by | Purpose |
 |------|-----------|---------|
 | `~/.openclaw/secrets/ghost_creds` | `setup.py` | Ghost credentials (GHOST_URL, GHOST_ADMIN_KEY). chmod 600. Never committed. |
-| `<skill_dir>/config.json` | `setup.py` | Behavior restrictions (allow_publish, allow_delete, etc.). No secrets. Not shipped - created by setup.py or copied from config.example.json. |
+| `~/.openclaw/config/ghost/config.json` | `setup.py` | Behavior restrictions (allow_publish, allow_delete, etc.). No secrets. Not in skill dir - survives clawhub updates. |
 
 Credentials can also be provided via environment variables (`GHOST_URL`, `GHOST_ADMIN_KEY`). The skill checks env vars first.
 

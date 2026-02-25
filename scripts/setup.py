@@ -34,7 +34,7 @@ def _ensure_requests():
 _ensure_requests()
 
 _DEFAULT_CONFIG = {
-    "allow_publish":       True,
+    "allow_publish":       False,
     "allow_delete":        False,
     "allow_member_access": False,
     "default_status":      "draft",
@@ -190,7 +190,7 @@ def main():
     print("  ── Content creation & editing ──")
     cfg["allow_publish"] = _ask_bool(
         "Allow publishing posts and pages?",
-        default=cfg.get("allow_publish", True),
+        default=cfg.get("allow_publish", False),
         hint="false = drafts only, agent cannot publish",
     )
     cfg["allow_delete"] = _ask_bool(

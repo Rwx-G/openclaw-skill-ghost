@@ -32,7 +32,7 @@ CONFIG_FILE = SKILL_DIR / "config.json"
 CREDS_FILE  = Path.home() / ".openclaw" / "secrets" / "ghost_creds"
 
 _DEFAULT_CONFIG = {
-    "allow_publish":       True,
+    "allow_publish":       False,
     "allow_delete":        False,
     "allow_member_access": False,
     "default_status":      "draft",
@@ -185,7 +185,7 @@ class GhostClient:
 
     def _resolve_status(self, requested_status: str) -> str:
         """Enforce allow_publish: if False, cap status at 'draft'."""
-        if requested_status == "published" and not self.cfg.get("allow_publish", True):
+        if requested_status == "published" and not self.cfg.get("allow_publish", False):
             return "draft"
         if requested_status is None:
             return self.cfg.get("default_status", "draft")
@@ -303,7 +303,7 @@ class GhostClient:
 
     def publish_post(self, post_id: str) -> dict:
         """Publish a draft post."""
-        if not self.cfg.get("allow_publish", True):
+        if not self.cfg.get("allow_publish", False):
             raise PermissionDeniedError("allow_publish is disabled in config.json")
         return self.update_post(post_id, status="published")
 
@@ -346,7 +346,7 @@ class GhostClient:
         return self._delete(f"pages/{page_id}")
 
     def publish_page(self, page_id: str) -> dict:
-        if not self.cfg.get("allow_publish", True):
+        if not self.cfg.get("allow_publish", False):
             raise PermissionDeniedError("allow_publish is disabled in config.json")
         return self.update_page(page_id, status="published")
 

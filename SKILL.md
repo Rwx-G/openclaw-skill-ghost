@@ -65,7 +65,7 @@ Admin API Key: Ghost Admin → Settings → Integrations → Add custom integrat
 
 | Key | Default | Effect |
 |-----|---------|--------|
-| `allow_publish` | `true` | allow status=published (false = drafts only) |
+| `allow_publish` | `false` | allow status=published (enable explicitly to publish) |
 | `allow_delete` | `false` | allow delete posts/pages/tags |
 | `allow_member_access` | `false` | enable member read/write |
 | `default_status` | `"draft"` | status applied when not specified |

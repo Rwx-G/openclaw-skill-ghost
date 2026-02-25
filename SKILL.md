@@ -83,6 +83,13 @@ The skill reads and writes the following paths. All usage is intentional and doc
 
 Credentials can also be provided via environment variables (`GHOST_URL`, `GHOST_ADMIN_KEY`). The skill checks env vars first.
 
+**Cleanup on uninstall:** `clawhub uninstall ghost-admin` removes the skill directory but leaves config and credentials in place. Clean manually if needed:
+```bash
+rm -rf ~/.openclaw/config/ghost
+rm ~/.openclaw/secrets/ghost_creds
+```
+On reinstall, any existing config at `~/.openclaw/config/ghost/config.json` is picked up automatically.
+
 ## Module usage
 
 ```python

@@ -12,7 +12,7 @@ metadata:
     }
   }
 ontology:
-  reads: []
+  reads: [posts, pages, tags, site, members, newsletters, tiers, users]
   writes: [posts, pages, tags, images]
 ---
 

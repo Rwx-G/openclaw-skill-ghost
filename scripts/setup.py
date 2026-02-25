@@ -6,13 +6,12 @@ Run this after installing the skill to configure credentials and behavior.
 Usage: python3 scripts/setup.py
 """
 
-import base64
-import hashlib
-import hmac
 import json
 import sys
-import time
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from jwt_utils import make_jwt as _make_jwt
 
 SKILL_DIR   = Path(__file__).resolve().parent.parent
 _CONFIG_DIR = Path.home() / ".openclaw" / "config" / "ghost"
@@ -84,20 +83,6 @@ def _write_creds(ghost_url: str, admin_key: str):
 def _write_config(cfg: dict):
     _CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     CONFIG_FILE.write_text(json.dumps(cfg, indent=2, ensure_ascii=False) + "\n")
-
-
-def _b64url(data: bytes) -> str:
-    return base64.urlsafe_b64encode(data).rstrip(b"=").decode()
-
-
-def _make_jwt(key_id: str, secret_hex: str) -> str:
-    now = int(time.time())
-    header  = {"alg": "HS256", "typ": "JWT", "kid": key_id}
-    payload = {"iat": now, "exp": now + 300, "aud": "/admin/"}
-    h = _b64url(json.dumps(header,  separators=(",", ":")).encode())
-    p = _b64url(json.dumps(payload, separators=(",", ":")).encode())
-    sig = hmac.new(bytes.fromhex(secret_hex), f"{h}.{p}".encode(), hashlib.sha256).digest()
-    return f"{h}.{p}.{_b64url(sig)}"
 
 
 def _test_connection(ghost_url: str, admin_key: str) -> tuple:

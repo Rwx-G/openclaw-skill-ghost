@@ -13,9 +13,6 @@ GHOST_ADMIN_KEY format: <id>:<secret_hex>
   → Ghost Admin → Integrations → Add custom integration → Admin API Key
 """
 
-import base64
-import hashlib
-import hmac
 import json
 import os
 import sys
@@ -25,6 +22,10 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 from urllib.parse import urljoin
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from jwt_utils import make_jwt as _make_jwt
+from _retry import with_retry
 
 # ─── Paths ─────────────────────────────────────────────────────────────────────
 
@@ -68,28 +69,12 @@ def _load_creds() -> dict:
     return creds
 
 
-# ─── JWT (stdlib only, no PyJWT needed) ────────────────────────────────────────
-
-def _b64url(data: bytes) -> str:
-    return base64.urlsafe_b64encode(data).rstrip(b"=").decode()
-
-
-def _make_jwt(key_id: str, secret_hex: str) -> str:
-    """Generate a short-lived HS256 JWT for Ghost Admin API auth."""
-    now = int(time.time())
-    header  = {"alg": "HS256", "typ": "JWT", "kid": key_id}
-    payload = {"iat": now, "exp": now + 300, "aud": "/admin/"}
-    h = _b64url(json.dumps(header,  separators=(",", ":")).encode())
-    p = _b64url(json.dumps(payload, separators=(",", ":")).encode())
-    msg    = f"{h}.{p}".encode()
-    secret = bytes.fromhex(secret_hex)
-    sig    = hmac.new(secret, msg, hashlib.sha256).digest()
-    return f"{h}.{p}.{_b64url(sig)}"
-
-
 # ─── Exceptions ────────────────────────────────────────────────────────────────
 
 class GhostError(RuntimeError):
+    pass
+
+class GhostAPIError(GhostError):
     pass
 
 class PermissionDeniedError(GhostError):
@@ -149,8 +134,10 @@ class GhostClient:
             headers["Content-Type"] = "application/json"
         req = urllib.request.Request(url, data=body, headers=headers, method=method)
         try:
-            with urllib.request.urlopen(req) as resp:
-                return json.loads(resp.read().decode("utf-8"))
+            def _do():
+                with urllib.request.urlopen(req) as resp:
+                    return json.loads(resp.read().decode("utf-8"))
+            return with_retry(_do)
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
             raise GhostAPIError(f"HTTP {exc.code} {method} {endpoint}: {detail[:300]}")
@@ -436,8 +423,10 @@ class GhostClient:
         url = f"{self.api_url}/images/upload"
         req = urllib.request.Request(url, data=body, headers=headers, method="POST")
         try:
-            with urllib.request.urlopen(req) as resp:
-                return json.loads(resp.read().decode("utf-8")).get("images", [{}])[0]
+            def _do():
+                with urllib.request.urlopen(req) as resp:
+                    return json.loads(resp.read().decode("utf-8")).get("images", [{}])[0]
+            return with_retry(_do)
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
             raise GhostAPIError(f"HTTP {exc.code} image upload: {detail[:300]}")
@@ -622,7 +611,7 @@ def _cli():
         jout(gc.update_post(args.post_id, **fields))
 
     elif args.cmd == "post-delete":
-        gc.delete_post(args.post_id); print(f"✓ post {args.post_id} deleted")
+        gc.delete_post(args.post_id); jout({"ok": True, "action": "delete", "resource": "post", "id": args.post_id})
 
     elif args.cmd == "post-publish":
         jout(gc.publish_post(args.post_id))
@@ -643,7 +632,7 @@ def _cli():
         jout(gc.update_page(args.page_id, **json.loads(args.fields_json)))
 
     elif args.cmd == "page-delete":
-        gc.delete_page(args.page_id); print(f"✓ page {args.page_id} deleted")
+        gc.delete_page(args.page_id); jout({"ok": True, "action": "delete", "resource": "page", "id": args.page_id})
 
     elif args.cmd == "page-publish":
         jout(gc.publish_page(args.page_id))
@@ -664,7 +653,7 @@ def _cli():
         jout(gc.update_tag(args.tag_id, **json.loads(args.fields_json)))
 
     elif args.cmd == "tag-delete":
-        gc.delete_tag(args.tag_id); print(f"✓ tag {args.tag_id} deleted")
+        gc.delete_tag(args.tag_id); jout({"ok": True, "action": "delete", "resource": "tag", "id": args.tag_id})
 
     elif args.cmd == "image-upload":
         jout(gc.upload_image(args.file, alt_text=args.alt, ref=args.ref))

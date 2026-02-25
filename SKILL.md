@@ -2,7 +2,7 @@
 name: ghost
 description: "Ghost CMS content management via Admin API v5.x. Use when: (1) creating, editing, or publishing blog posts or static pages, (2) managing tags, (3) uploading images, (4) reading member/newsletter/tier info, (5) checking site settings. NOT for: theme management (needs Ghost CLI), webhook config, email sending (auto on publish), content import/export (use Ghost Admin UI), or multi-site setups."
 homepage: https://github.com/rwx-g/openclaw-skill-ghost
-compatibility: Python 3.9+ · requests · network access to Ghost instance · Admin API Key
+compatibility: Python 3.9+ · network access to Ghost instance · Admin API Key
 metadata:
   {
     "openclaw": {
@@ -18,7 +18,7 @@ ontology:
 
 # Ghost Skill
 
-Full Ghost Admin API v5 client. HS256 JWT auth via stdlib - no external dependencies beyond `requests`.
+Full Ghost Admin API v5 client. HS256 JWT auth and all HTTP calls via stdlib (urllib) - zero external dependencies.
 Credentials: `~/.openclaw/secrets/ghost_creds` · Config: `~/.openclaw/config/ghost/config.json`
 
 ## Trigger phrases
@@ -47,7 +47,6 @@ python3 scripts/ghost.py posts --limit 3 --fields "id,title,status"
 ## Setup
 
 ```bash
-pip install requests           # install dependency first (setup.py does not run pip)
 python3 scripts/setup.py       # interactive: credentials + permissions + connection test
 python3 scripts/init.py        # validate all configured permissions against live instance
 ```

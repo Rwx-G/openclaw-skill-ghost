@@ -20,10 +20,11 @@ import json
 import os
 import sys
 import time
+import urllib.error
+import urllib.parse
+import urllib.request
 from pathlib import Path
 from urllib.parse import urljoin
-
-import requests
 
 # ─── Paths ─────────────────────────────────────────────────────────────────────
 
@@ -133,39 +134,43 @@ class GhostClient:
             "Accept-Version": "v5.0",
         }
 
+    def _request(self, method: str, endpoint: str, payload: dict = None,
+                 params: dict = None) -> dict:
+        """Generic HTTP request using stdlib urllib."""
+        url = f"{self.api_url}/{endpoint.lstrip('/')}"
+        if params:
+            filtered = {k: v for k, v in params.items() if v is not None}
+            if filtered:
+                url += "?" + urllib.parse.urlencode(filtered)
+        headers = self._headers()
+        body = None
+        if payload is not None:
+            body = json.dumps(payload).encode("utf-8")
+            headers["Content-Type"] = "application/json"
+        req = urllib.request.Request(url, data=body, headers=headers, method=method)
+        try:
+            with urllib.request.urlopen(req) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")
+            raise GhostAPIError(f"HTTP {exc.code} {method} {endpoint}: {detail[:300]}")
+        except urllib.error.URLError as exc:
+            raise GhostAPIError(f"Network error {method} {endpoint}: {exc.reason}")
+
     def _get(self, endpoint: str, params: dict = None) -> dict:
-        r = requests.get(
-            f"{self.api_url}/{endpoint.lstrip('/')}",
-            headers=self._headers(), params=params or {},
-        )
-        r.raise_for_status()
-        return r.json()
+        return self._request("GET", endpoint, params=params)
 
     def _post(self, endpoint: str, payload: dict, params: dict = None) -> dict:
         self._check_write()
-        r = requests.post(
-            f"{self.api_url}/{endpoint.lstrip('/')}",
-            headers=self._headers(), json=payload, params=params,
-        )
-        r.raise_for_status()
-        return r.json()
+        return self._request("POST", endpoint, payload=payload, params=params)
 
     def _put(self, endpoint: str, payload: dict, params: dict = None) -> dict:
         self._check_write()
-        r = requests.put(
-            f"{self.api_url}/{endpoint.lstrip('/')}",
-            headers=self._headers(), json=payload, params=params,
-        )
-        r.raise_for_status()
-        return r.json()
+        return self._request("PUT", endpoint, payload=payload, params=params)
 
     def _delete(self, endpoint: str) -> bool:
         self._check_delete()
-        r = requests.delete(
-            f"{self.api_url}/{endpoint.lstrip('/')}",
-            headers=self._headers(),
-        )
-        r.raise_for_status()
+        self._request("DELETE", endpoint)
         return True
 
     # ── Config enforcement ─────────────────────────────────────────────────────
@@ -404,18 +409,38 @@ class GhostClient:
             ".svg": "image/svg+xml", ".webp": "image/webp",
         }
         mime = mime_map.get(path.suffix.lower(), "application/octet-stream")
-        token = _make_jwt(self._key_id, self._secret_hex)
-        headers = {"Authorization": f"Ghost {token}", "Accept-Version": "v5.0"}
-        files   = {"file": (path.name, path.read_bytes(), mime)}
-        data    = {}
-        if alt_text: data["alt"] = alt_text
-        if ref:      data["ref"] = ref
-        r = requests.post(
-            f"{self.api_url}/images/upload",
-            headers=headers, files=files, data=data,
+        boundary = f"----GhostUpload{int(time.time() * 1000)}"
+        file_bytes = path.read_bytes()
+        parts = []
+        parts.append(
+            f"--{boundary}\r\nContent-Disposition: form-data; "
+            f'name="file"; filename="{path.name}"\r\n'
+            f"Content-Type: {mime}\r\n\r\n".encode()
+            + file_bytes + b"\r\n"
         )
-        r.raise_for_status()
-        return r.json().get("images", [{}])[0]
+        for field, value in [("alt", alt_text), ("ref", ref)]:
+            if value:
+                parts.append(
+                    f"--{boundary}\r\nContent-Disposition: form-data; "
+                    f'name="{field}"\r\n\r\n{value}\r\n'.encode()
+                )
+        parts.append(f"--{boundary}--\r\n".encode())
+        body = b"".join(parts)
+        token = _make_jwt(self._key_id, self._secret_hex)
+        headers = {
+            "Authorization": f"Ghost {token}",
+            "Accept-Version": "v5.0",
+            "Content-Type": f"multipart/form-data; boundary={boundary}",
+            "Content-Length": str(len(body)),
+        }
+        url = f"{self.api_url}/images/upload"
+        req = urllib.request.Request(url, data=body, headers=headers, method="POST")
+        try:
+            with urllib.request.urlopen(req) as resp:
+                return json.loads(resp.read().decode("utf-8")).get("images", [{}])[0]
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")
+            raise GhostAPIError(f"HTTP {exc.code} image upload: {detail[:300]}")
 
     # ── Members ────────────────────────────────────────────────────────────────
 

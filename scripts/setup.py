@@ -14,25 +14,10 @@ import sys
 import time
 from pathlib import Path
 
-# No subprocess usage in this file - pip installs must be done manually.
-
 SKILL_DIR   = Path(__file__).resolve().parent.parent
 _CONFIG_DIR = Path.home() / ".openclaw" / "config" / "ghost"
 CONFIG_FILE = _CONFIG_DIR / "config.json"
 CREDS_FILE  = Path.home() / ".openclaw" / "secrets" / "ghost_creds"
-
-# ─── Dependency check ─────────────────────────────────────────────────────────
-
-def _ensure_requests():
-    try:
-        import requests  # noqa: F401
-    except ImportError:
-        print("✗ Missing dependency: 'requests' is not installed.")
-        print("  Install it with:  pip install requests")
-        print("  Then re-run:      python3 scripts/setup.py")
-        sys.exit(1)
-
-_ensure_requests()
 
 _DEFAULT_CONFIG = {
     "allow_publish":       False,
@@ -117,8 +102,9 @@ def _make_jwt(key_id: str, secret_hex: str) -> str:
 
 def _test_connection(ghost_url: str, admin_key: str) -> tuple:
     """Returns (success: bool, info: str)."""
+    import urllib.error
+    import urllib.request
     try:
-        import requests
         parts = admin_key.split(":")
         if len(parts) != 2:
             return False, "Invalid key format (expected id:secret_hex)"
@@ -127,15 +113,17 @@ def _test_connection(ghost_url: str, admin_key: str) -> tuple:
         except ValueError:
             return False, "Invalid key: secret part is not valid hex"
         token = _make_jwt(parts[0], parts[1])
-        r = requests.get(
-            f"{ghost_url.rstrip('/')}/ghost/api/admin/site",
+        url = f"{ghost_url.rstrip('/')}/ghost/api/admin/site"
+        req = urllib.request.Request(
+            url,
             headers={"Authorization": f"Ghost {token}", "Accept-Version": "v5.0"},
-            timeout=10,
         )
-        if r.status_code == 200:
-            title = r.json().get("site", {}).get("title", "Ghost")
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            title = data.get("site", {}).get("title", "Ghost")
             return True, title
-        return False, f"HTTP {r.status_code}: {r.text[:120]}"
+    except urllib.error.HTTPError as exc:
+        return False, f"HTTP {exc.code}: {exc.read().decode('utf-8', errors='replace')[:120]}"
     except Exception as e:
         return False, str(e)
 

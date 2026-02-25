@@ -6,7 +6,7 @@
 [![OpenClaw](https://img.shields.io/badge/OpenClaw-skill-blue)](https://openclaw.ai)
 [![ClawHub](https://img.shields.io/badge/ClawHub-ghost--admin-green)](https://clawhub.ai/Romain-Grosos/ghost-admin)
 
-Full Ghost Admin API v5 client for OpenClaw agents. Covers posts, pages, tags, images, members, and newsletters. JWT auth generated from stdlib - no external dependencies beyond `requests`. Includes interactive setup wizard, connection + permission validation, and a behavior restriction system via `config.json`.
+Full Ghost Admin API v5 client for OpenClaw agents. Covers posts, pages, tags, images, members, and newsletters. JWT auth and all HTTP calls via stdlib (urllib) - zero external dependencies. Includes interactive setup wizard, connection + permission validation, and a behavior restriction system via `config.json`.
 
 ## Install
 
@@ -24,7 +24,7 @@ git clone https://github.com/rwx-g/openclaw-skill-ghost \
 ## Setup
 
 ```bash
-pip install requests           # install dependency first
+
 python3 scripts/setup.py       # credentials + permissions + connection test
 python3 scripts/init.py        # validate all configured permissions
 ```
@@ -75,10 +75,8 @@ A `config.example.json` with safe defaults is included as reference. Copy it to 
 ## Requirements
 
 - Python 3.9+
-- `requests` - install with `pip install requests` before running setup.py
 - Network access to Ghost instance (self-hosted or Ghost Pro)
-
-> **Note:** setup.py does not run `pip` automatically. Install dependencies manually before setup.
+- No pip installs needed - stdlib only
 
 ## Documentation
 

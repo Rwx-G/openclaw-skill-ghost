@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-setup.py — Interactive setup for the Ghost skill.
+setup.py - Interactive setup for the Ghost skill.
 Run this after installing the skill to configure credentials and behavior.
 
 Usage: python3 scripts/setup.py
@@ -14,7 +14,7 @@ import sys
 import time
 from pathlib import Path
 
-# No subprocess usage in this file — pip installs must be done manually.
+# No subprocess usage in this file - pip installs must be done manually.
 
 SKILL_DIR   = Path(__file__).resolve().parent.parent
 CONFIG_FILE = SKILL_DIR / "config.json"
@@ -140,11 +140,11 @@ def _test_connection(ghost_url: str, admin_key: str) -> tuple:
 
 def main():
     print("┌─────────────────────────────────────────┐")
-    print("│   Ghost Skill — Setup                   │")
+    print("│   Ghost Skill - Setup                   │")
     print("└─────────────────────────────────────────┘")
 
     # ── Step 1: Credentials ────────────────────────────────────────────────────
-    print("\n● Step 1/2 — Credentials\n")
+    print("\n● Step 1/2 - Credentials\n")
 
     existing = _load_existing_creds()
     ghost_url = admin_key = ""
@@ -171,18 +171,18 @@ def main():
         print("\n  Testing connection...", end=" ", flush=True)
         ok, info = _test_connection(ghost_url, admin_key)
         if ok:
-            print(f"✓ Connected — site: \"{info}\"")
+            print(f"✓ Connected - site: \"{info}\"")
         else:
-            print(f"✗ Failed — {info}")
+            print(f"✗ Failed - {info}")
             if not _ask_bool("  Save credentials anyway?", default=False):
-                print("  Aborted — no files written.")
+                print("  Aborted - no files written.")
                 sys.exit(1)
 
         _write_creds(ghost_url, admin_key)
         print(f"  ✓ Saved to {CREDS_FILE}")
 
     # ── Step 2: Permissions ────────────────────────────────────────────────────
-    print("\n● Step 2/2 — Permissions\n")
+    print("\n● Step 2/2 - Permissions\n")
     print("  Configure what operations the agent is allowed to perform.\n")
 
     cfg = _load_existing_config()
@@ -224,7 +224,7 @@ def main():
 
     print("\n  ── Safety ──")
     cfg["readonly_mode"] = _ask_bool(
-        "Enable readonly mode? (overrides all above — no writes at all)",
+        "Enable readonly mode? (overrides all above - no writes at all)",
         default=cfg.get("readonly_mode", False),
     )
 
@@ -245,7 +245,7 @@ def main():
         t if isinstance(t, str) else t.get("name", "") for t in cfg["default_tags"]
     ) or "(none)"
     print(f"  Default tags   : {tags_display}")
-    print(f"  Readonly       : {'⚠ ON — all writes blocked' if ro else '✗ off'}")
+    print(f"  Readonly       : {'⚠ ON - all writes blocked' if ro else '✗ off'}")
     print()
     print("  Run init.py to validate that all permissions work:")
     print("    python3 scripts/init.py")

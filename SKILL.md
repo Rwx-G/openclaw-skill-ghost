@@ -18,7 +18,7 @@ ontology:
 
 # Ghost Skill
 
-Full Ghost Admin API v5 client. HS256 JWT auth via stdlib — no external dependencies beyond `requests`.
+Full Ghost Admin API v5 client. HS256 JWT auth via stdlib - no external dependencies beyond `requests`.
 Credentials: `~/.openclaw/secrets/ghost_creds` · Config: `config.json` in skill dir.
 
 ## Trigger phrases
@@ -52,16 +52,16 @@ python3 scripts/setup.py       # interactive: credentials + permissions + connec
 python3 scripts/init.py        # validate all configured permissions against live instance
 ```
 
-> init.py only runs write/delete tests when `allow_delete=true`. When `allow_delete=false`, write tests are skipped — no test artifacts are created, so none can be left behind.
+> init.py only runs write/delete tests when `allow_delete=true`. When `allow_delete=false`, write tests are skipped - no test artifacts are created, so none can be left behind.
 
-**Manual** — `~/.openclaw/secrets/ghost_creds` (chmod 600):
+**Manual** - `~/.openclaw/secrets/ghost_creds` (chmod 600):
 ```
 GHOST_URL=https://your-ghost.example.com
 GHOST_ADMIN_KEY=id:secret_hex
 ```
 Admin API Key: Ghost Admin → Settings → Integrations → Add custom integration → copy **Admin API Key**.
 
-**config.json** — behavior restrictions:
+**config.json** - behavior restrictions:
 
 | Key | Default | Effect |
 |-----|---------|--------|
@@ -71,6 +71,17 @@ Admin API Key: Ghost Admin → Settings → Integrations → Add custom integrat
 | `default_status` | `"draft"` | status applied when not specified |
 | `default_tags` | `[]` | tags always merged into new posts |
 | `readonly_mode` | `false` | override: block all writes |
+
+## Storage & credentials
+
+The skill reads and writes the following paths. All usage is intentional and documented:
+
+| Path | Written by | Purpose |
+|------|-----------|---------|
+| `~/.openclaw/secrets/ghost_creds` | `setup.py` | Ghost credentials (GHOST_URL, GHOST_ADMIN_KEY). chmod 600. Never committed. |
+| `<skill_dir>/config.json` | `setup.py` | Behavior restrictions (allow_publish, allow_delete, etc.). No secrets. Not shipped - created by setup.py or copied from config.example.json. |
+
+Credentials can also be provided via environment variables (`GHOST_URL`, `GHOST_ADMIN_KEY`). The skill checks env vars first.
 
 ## Module usage
 
@@ -185,7 +196,7 @@ for name in ["DevOps", "Security", "Linux", "Cloud"]:
 ## Notes
 - **`updated_at` conflict guard**: `update_post`/`update_page` auto-fetches `updated_at` if omitted.
 - **HTML content**: Ghost v5 stores Lexical internally but `html` import works perfectly for agent-generated content.
-- **`allow_publish: false`**: Status is silently capped to `"draft"` — no error raised.
+- **`allow_publish: false`**: Status is silently capped to `"draft"` - no error raised.
 - **JWT tokens**: Generated fresh per request (5-min TTL), no caching needed.
 - **Slug**: Auto-generated from title if omitted. Override with `--slug` for clean URLs.
 

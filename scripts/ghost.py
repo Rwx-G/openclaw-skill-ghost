@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ghost.py — Ghost CMS Admin API client for OpenClaw
+ghost.py - Ghost CMS Admin API client for OpenClaw
 Skill: ghost | https://clawhub.ai
 
 Supports Ghost Admin API v5.x (self-hosted and Ghost Pro).

@@ -1,4 +1,4 @@
-# Ghost Skill — Troubleshooting
+# Ghost Skill - Troubleshooting
 
 ## Credentials missing
 
@@ -27,7 +27,7 @@ The format is exactly `<24-char-hex-id>:<64-char-hex-secret>`.
 Cause: JWT expired, wrong key, or key revoked.
 
 Fixes:
-- JWT tokens are generated fresh per request (5-min TTL) — expiry shouldn't be the issue
+- JWT tokens are generated fresh per request (5-min TTL) - expiry shouldn't be the issue
 - Verify the key is still active: Ghost Admin → Integrations → check the integration exists
 - Confirm `secret_hex` is valid hex: `python3 -c "bytes.fromhex('your_secret')"`
 - Confirm the `GHOST_URL` doesn't have a trailing slash
@@ -39,13 +39,13 @@ Fixes:
 Cause: wrong URL, Ghost not running, or resource deleted.
 
 Fixes:
-- Test: `python3 scripts/ghost.py site` — if this fails, the URL or Ghost itself is the problem
+- Test: `python3 scripts/ghost.py site` - if this fails, the URL or Ghost itself is the problem
 - Ensure `GHOST_URL` points to the Ghost root, e.g. `https://blog.example.com` not `https://blog.example.com/ghost`
 - For get by slug: slug may have changed after a title update
 
 ---
 
-## 409 Conflict — updated_at mismatch
+## 409 Conflict - updated_at mismatch
 
 ```json
 {"errors": [{"type": "ConflictError", "message": "Saving failed! ..."}]}
@@ -61,7 +61,7 @@ gc.update_post(post_id, updated_at=post["updated_at"], title="New Title")
 
 ---
 
-## 409 Conflict — slug already exists
+## 409 Conflict - slug already exists
 
 Cause: trying to create a post/tag with a slug that already exists.
 
@@ -114,7 +114,7 @@ Cause: `html` field sent but Ghost isn't converting it properly.
 Notes:
 - Ghost v5 stores content as Lexical JSON internally
 - When you `POST` with `html`, Ghost converts it via its mobiledoc/lexical importer
-- Ensure HTML is valid and well-formed — unclosed tags can cause silent failures
+- Ensure HTML is valid and well-formed - unclosed tags can cause silent failures
 - To retrieve rendered HTML: add `?formats=html` to GET requests
 
 Fix:

@@ -54,34 +54,34 @@ Tokens expire in 5 minutes. Generate a fresh token per request.
 
 ## 3. Posts
 
-### GET /posts — List posts
+### GET /posts - List posts
 ```
 Params:
-  limit   : int    — default 15, max 'all'
-  page    : int    — default 1
-  filter  : string — NQL filter (see §11)
-  order   : string — "published_at desc" (default)
-  include : string — comma-separated: "tags,authors,tiers"
-  fields  : string — comma-separated field names (projection)
-  formats : string — "html,lexical,mobiledoc,plaintext"
+  limit   : int    - default 15, max 'all'
+  page    : int    - default 1
+  filter  : string - NQL filter (see §11)
+  order   : string - "published_at desc" (default)
+  include : string - comma-separated: "tags,authors,tiers"
+  fields  : string - comma-separated field names (projection)
+  formats : string - "html,lexical,mobiledoc,plaintext"
 Returns: { posts: [...], meta: { pagination: { page, limit, pages, total, next, prev } } }
 ```
 
-### GET /posts/{id} — Get by ID
-### GET /posts/slug/{slug} — Get by slug
+### GET /posts/{id} - Get by ID
+### GET /posts/slug/{slug} - Get by slug
 
-### POST /posts — Create post
+### POST /posts - Create post
 ```json
 {
   "posts": [{
     "title":             "string (required)",
-    "html":              "string — HTML content (converted to Lexical internally)",
-    "lexical":           "string — Lexical JSON (preferred for Ghost v5)",
+    "html":              "string - HTML content (converted to Lexical internally)",
+    "lexical":           "string - Lexical JSON (preferred for Ghost v5)",
     "status":            "draft | published | scheduled",
     "tags":              [{"name": "tag-name"} | {"id": "tag-id"}],
     "authors":           [{"id": "author-id"}],
     "featured":          false,
-    "slug":              "string — auto-generated if omitted",
+    "slug":              "string - auto-generated if omitted",
     "custom_excerpt":    "string",
     "meta_title":        "string",
     "meta_description":  "string",
@@ -89,8 +89,8 @@ Returns: { posts: [...], meta: { pagination: { page, limit, pages, total, next, 
     "og_description":    "string",
     "twitter_title":     "string",
     "twitter_description":"string",
-    "feature_image":     "string — URL",
-    "published_at":      "ISO 8601 — required when status=scheduled",
+    "feature_image":     "string - URL",
+    "published_at":      "ISO 8601 - required when status=scheduled",
     "visibility":        "public | members | paid | tiers",
     "canonical_url":     "string"
   }]
@@ -98,7 +98,7 @@ Returns: { posts: [...], meta: { pagination: { page, limit, pages, total, next, 
 Returns: { posts: [created_post] }
 ```
 
-### PUT /posts/{id} — Update post
+### PUT /posts/{id} - Update post
 ```
 Body: { "posts": [{ "updated_at": "ISO 8601 (required)", ...fields }] }
 Note: updated_at must match the current value to prevent conflicts. Fetch it first.
@@ -123,7 +123,7 @@ Pages do not have tags/newsletters/email settings by default.
 
 ## 5. Tags
 
-### GET /tags — List tags
+### GET /tags - List tags
 ```
 Params: limit, page, include="count.posts", filter, order
 Returns: { tags: [...], meta: { pagination: {...} } }
@@ -131,14 +131,14 @@ Returns: { tags: [...], meta: { pagination: {...} } }
 
 ### GET /tags/{id} | GET /tags/slug/{slug}
 
-### POST /tags — Create tag
+### POST /tags - Create tag
 ```json
 {
   "tags": [{
     "name":             "string (required)",
-    "slug":             "string — auto-generated if omitted",
+    "slug":             "string - auto-generated if omitted",
     "description":      "string",
-    "feature_image":    "string — URL",
+    "feature_image":    "string - URL",
     "visibility":       "public | internal",
     "meta_title":       "string",
     "meta_description": "string",
@@ -149,14 +149,14 @@ Returns: { tags: [...], meta: { pagination: {...} } }
 }
 ```
 
-### PUT /tags/{id} — Update tag (no updated_at required)
-### DELETE /tags/{id} — Status 204
+### PUT /tags/{id} - Update tag (no updated_at required)
+### DELETE /tags/{id} - Status 204
 
 ---
 
 ## 6. Images & Media
 
-### POST /images/upload — Upload image
+### POST /images/upload - Upload image
 ```
 Content-Type: multipart/form-data
 Fields:
@@ -167,13 +167,13 @@ Fields:
 Returns: { images: [{ url, ref }] }
 ```
 
-### POST /media/upload — Upload video/audio
+### POST /media/upload - Upload video/audio
 ```
 Same multipart format. Supported: mp4, webm, ogv, mp3, wav, ogg, m4a.
 Returns: { media: [{ url, ref }] }
 ```
 
-### POST /files/upload — Upload any file
+### POST /files/upload - Upload any file
 ```
 Returns: { files: [{ url, ref }] }
 ```
@@ -201,7 +201,7 @@ Filter examples:
 ```
 
 ### PUT /members/{id}
-### DELETE /members/{id} — Status 204
+### DELETE /members/{id} - Status 204
 
 ---
 
@@ -212,8 +212,8 @@ Filter examples:
 Params: limit, filter, include="count.members,count.posts"
 ```
 ### GET /newsletters/{id}
-### POST /newsletters — Create newsletter (name required)
-### PUT /newsletters/{id} — Update newsletter
+### POST /newsletters - Create newsletter (name required)
+### PUT /newsletters/{id} - Update newsletter
 
 ---
 
@@ -234,7 +234,7 @@ Returns active and archived tiers (subscription plans)
 Returns: { site: { title, description, url, version, ... } }
 ```
 
-### GET /users — List users (authors/staff)
+### GET /users - List users (authors/staff)
 ### GET /users/{id} | GET /users/me
 ```
 include: "roles,count.posts"
@@ -324,12 +324,12 @@ Key fields returned in list/get responses:
 | 200 | OK |
 | 201 | Created |
 | 204 | No Content (DELETE success) |
-| 400 | Bad Request — malformed body, missing fields |
-| 401 | Unauthorized — invalid or expired JWT |
-| 403 | Forbidden — insufficient permissions |
+| 400 | Bad Request - malformed body, missing fields |
+| 401 | Unauthorized - invalid or expired JWT |
+| 403 | Forbidden - insufficient permissions |
 | 404 | Not Found |
-| 409 | Conflict — slug already exists, or `updated_at` mismatch on PUT |
-| 422 | Validation Failed — see errors array |
+| 409 | Conflict - slug already exists, or `updated_at` mismatch on PUT |
+| 422 | Validation Failed - see errors array |
 | 429 | Rate Limited |
 | 500 | Internal Server Error |
 
